@@ -1,0 +1,58 @@
+- name: Ensure directories exists
+  ansible.builtin.file:
+    dest: "{{ item }}"
+    state: directory
+    mode: '0644'
+  loop:
+    - ~/compose
+    - ~/compose/mysql
+
+- name: Ensure docker-compose file has been updated
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: ~/compose/mysql/
+    mode: '0644'
+  loop:
+    - docker-compose.yml
+    - mysql_master.env
+    - mysql_master.cnf
+
+- name: Ensure mysql compose files are up
+  community.docker.docker_compose:
+    state: present
+    project_src: ~/compose/mysql/
+    files:
+      - docker-compose.yml
+
+- name: Create replication user
+  community.docker.docker_container_exec:
+    container: mysql_master
+    command: mysql -uroot -p{{ MYSQL_ROOT_PASSWORD }} -vvv -e"CREATE USER 'repl'@'%' IDENTIFIED BY 'slavepass'"
+    chdir: /root
+  register: result
+
+- name: Print stdout
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: Grant replication user
+  community.docker.docker_container_exec:
+    container: mysql_master
+    command: mysql -uroot -p{{ MYSQL_ROOT_PASSWORD }} -vvv -e"GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%'"
+    chdir: /root
+  register: result
+
+- name: Print stdout
+  ansible.builtin.debug:
+    var: result.stdout
+
+- name: Get master status
+  community.docker.docker_container_exec:
+    container: mysql_master
+    command: mysql -uroot -p{{ MYSQL_ROOT_PASSWORD }} -e"SHOW MASTER STATUS"
+    chdir: /root
+  register: result
+
+- name: Print stdout
+  ansible.builtin.debug:
+    var: result.stdout

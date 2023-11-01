@@ -1,0 +1,7 @@
+main:
+  hosts:
+    target:
+      ansible_host: 65.21.55.70
+      ansible_user: root
+      ansible_port: 22
+      ansible_ssh_private_key_file: ~/.ssh/g2

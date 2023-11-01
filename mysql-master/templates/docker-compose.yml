@@ -1,0 +1,23 @@
+services:
+  mysql_master:
+    image: percona:ps-8.0
+    container_name: mysql_master
+    restart: unless-stopped
+    env_file:
+      - ./mysql_master.env
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - ./mysql_master.cnf:/etc/mysql/conf.d/mysql_master.cnf
+    #   - dbdata:/var/lib/mysql/
+    networks:
+      - mysql
+
+networks:
+  mysql:
+    driver: bridge
+    name: mysql
+
+# volumes:
+#   dbdata:
+#     driver: local
